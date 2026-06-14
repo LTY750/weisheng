@@ -390,7 +390,7 @@
       const cls = d.offset === 0 ? "row today" : "row";
       return `<div class="${cls}">
         <span class="tag">${d.label}</span>
-        <span class="date">${r.date.getMonth()+1}月${r.date.getDate()}日</span>
+        <span class="date">${r.date.getMonth()+1}月${r.date.getDate()}日 周${DAY_NAMES[r.date.getDay()]}</span>
         <span class="names">${r.group.people[0]}<br>${r.group.people[1]}</span>
       </div>`;
     }).join("");
