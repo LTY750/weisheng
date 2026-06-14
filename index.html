@@ -275,6 +275,58 @@
   .modal .btn-save:hover { box-shadow: 0 6px 20px -4px rgba(99,102,241,.5); }
   .modal .btn-reset { background: #f0f0f5; color: #666; }
   .modal .btn-reset:hover { background: #e8e8ee; }
+  .modal .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4c1d95;
+    margin: 18px 0 10px;
+    padding-top: 14px;
+    border-top: 1px solid #eeeef6;
+  }
+  .modal .section-title:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  .modal .fg input[type="date"],
+  .modal .fg input[type="text"],
+  .modal .fg textarea,
+  .modal .fg select {
+    width: 100%;
+    border: 2px solid #e8e8ee;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 13px;
+    color: #444;
+    background: #fff;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .modal .fg textarea {
+    min-height: 96px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .modal .fg input[type="date"]:focus,
+  .modal .fg input[type="text"]:focus,
+  .modal .fg textarea:focus,
+  .modal .fg select:focus {
+    border-color: #8b5cf6;
+  }
+  .modal .hint {
+    font-size: 11px;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin-top: -4px;
+    margin-bottom: 10px;
+  }
+  .modal .btn-ghost {
+    background: #f8f7ff;
+    color: #6d28d9;
+    margin-top: 8px;
+  }
+  .modal .btn-ghost:hover { background: #ede9fe; }
 
   /* responsive */
   @media (max-width: 420px) {
@@ -310,6 +362,21 @@
     .modal h2 { color: #e8e4ff; }
     .modal .fg label { color: #a0a0b0; }
     .modal .fg input[type="color"] { background: #2a2840; border-color: #3a3850; }
+    .modal .fg input[type="date"],
+    .modal .fg input[type="text"],
+    .modal .fg textarea,
+    .modal .fg select {
+      background: #2a2840;
+      border-color: #3a3850;
+      color: #e5e7eb;
+    }
+    .modal .section-title {
+      color: #c4b5fd;
+      border-top-color: #3a3850;
+    }
+    .modal .hint { color: #6a6a80; }
+    .modal .btn-ghost { background: #2a2840; color: #c4b5fd; }
+    .modal .btn-ghost:hover { background: #35324d; }
     .modal .btn-reset { background: #2a2840; color: #a0a0b0; }
   }
 </style>
@@ -320,7 +387,15 @@
 
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <h2>🎨 自定义颜色</h2>
+    <h2>⚙️ 设置</h2>
+    <div class="section-title">排班设置</div>
+    <div class="fg"><label style="--dot:#6366f1">起始日期</label><input type="date" id="schedule-start-date"></div>
+    <div class="fg"><label style="--dot:#8b5cf6">当天值日组</label><select id="schedule-start-group"></select></div>
+    <div class="fg"><label style="--dot:#a855f7">值日人员</label><textarea id="schedule-groups" placeholder="每行一组，两个人用逗号分隔&#10;康戬泰, 甘亦伦&#10;刘云腾, 刘峻承"></textarea></div>
+    <div class="hint">每行代表一天轮到的一组，支持逗号、顿号、空格分隔；至少填写一组。</div>
+    <button class="btn-save btn-ghost" onclick="resetSchedule()">↩ 恢复默认排班</button>
+
+    <div class="section-title">颜色设置</div>
     <div class="fg"><label style="--dot:#0f0c29">背景色</label><input type="color" id="cl-bg"></div>
     <div class="fg"><label style="--dot:#ffffff">卡片底色</label><input type="color" id="cl-card"></div>
     <div class="fg"><label style="--dot:#1e1b4b">标题颜色</label><input type="color" id="cl-title"></div>
@@ -330,8 +405,8 @@
     <div class="fg"><label style="--dot:#f8f7ff">卡片项背景色</label><input type="color" id="cl-ibg"></div>
     <div class="fg"><label style="--dot:#ede9fe">今天高亮背景</label><input type="color" id="cl-tbg"></div>
     <div class="btn-row">
-      <button class="btn-reset" onclick="resetColors()">↩ 默认</button>
-      <button class="btn-save" onclick="saveColors()">✓ 保存</button>
+      <button class="btn-reset" onclick="resetColors()">↩ 默认颜色</button>
+      <button class="btn-save" onclick="saveSettings()">✓ 保存全部</button>
     </div>
   </div>
 </div>
@@ -346,14 +421,18 @@
 
 <script>
 (function() {
-  const groups = [
+  let groups = [
     { label: "第1组", people: ["康戬泰", "甘亦伦"] },
     { label: "第2组", people: ["刘云腾", "刘峻承"] },
     { label: "第3组", people: ["杜春旺", "周诣"] },
     { label: "第4组", people: ["刘洋", "刘天洋"] }
   ];
-  const start = new Date(2026,5,12);
-  const startIdx = 2;
+  let start = new Date(2026,5,12);
+  let startIdx = 2;
+  const defaultGroups = groups.map(g => ({ label: g.label, people: [...g.people] }));
+  const defaultStart = new Date(start);
+  const defaultStartIdx = startIdx;
+  const SCHEDULE_KEY = "ws_schedule";
   const today = new Date();
   today.setHours(0,0,0,0);
 
@@ -378,6 +457,51 @@
     return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${DAY_NAMES[d.getDay()]}`;
   }
 
+  function toDateInputValue(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDateInput(s) {
+    const parts = s.split("-").map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+
+  function cloneGroups(list) {
+    return list.map((g, i) => ({ label: g.label || `第${i + 1}组`, people: [...g.people] }));
+  }
+
+  function serializeGroups(list) {
+    return list.map(g => g.people.join("、")).join("\n");
+  }
+
+  function parseGroups(text) {
+    return text.split("\n")
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map((line, i) => ({
+        label: `第${i + 1}组`,
+        people: line.split(/[、,，\s]+/).map(name => name.trim()).filter(Boolean)
+      }))
+      .filter(g => g.people.length > 0);
+  }
+
+  function loadSchedule() {
+    try {
+      const saved = localStorage.getItem(SCHEDULE_KEY);
+      if (!saved) return;
+      const cfg = JSON.parse(saved);
+      const savedGroups = Array.isArray(cfg.groups) ? parseGroups(serializeGroups(cfg.groups)) : [];
+      if (savedGroups.length > 0 && cfg.startDate) {
+        groups = savedGroups;
+        start = parseDateInput(cfg.startDate);
+        startIdx = Math.min(Math.max(Number(cfg.startIdx) || 0, 0), groups.length - 1);
+      }
+    } catch(e) {}
+  }
+
   function render() {
     const r0 = getGroup(0);
     document.getElementById("todayBox").innerHTML =
@@ -398,6 +522,8 @@
     document.getElementById("list").innerHTML = html;
     document.getElementById("badge").textContent =
       `🕐 ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+    document.querySelector(".footer").textContent =
+      `🔁 ${groups.length}组循环 · 轮完${groups[groups.length - 1].label}回${groups[0].label}`;
   }
 
   const defaultColors = {
@@ -443,6 +569,62 @@
     return c;
   }
 
+  function refreshStartGroupSelect(selected) {
+    const sel = document.getElementById("schedule-start-group");
+    const parsed = parseGroups(document.getElementById("schedule-groups").value);
+    const source = parsed.length ? parsed : groups;
+    sel.innerHTML = source.map((g, i) =>
+      `<option value="${i}">${g.label}：${g.people.join("、")}</option>`
+    ).join("");
+    sel.value = Math.min(selected ?? startIdx, Math.max(source.length - 1, 0));
+  }
+
+  function popSchedule() {
+    document.getElementById("schedule-start-date").value = toDateInputValue(start);
+    document.getElementById("schedule-groups").value = serializeGroups(groups);
+    refreshStartGroupSelect(startIdx);
+  }
+
+  function saveSchedule() {
+    const nextGroups = parseGroups(document.getElementById("schedule-groups").value);
+    if (nextGroups.length === 0) {
+      alert("至少填写一组值日人员");
+      return false;
+    }
+    const dateValue = document.getElementById("schedule-start-date").value;
+    if (!dateValue) {
+      alert("请选择起始日期");
+      return false;
+    }
+    groups = nextGroups;
+    start = parseDateInput(dateValue);
+    startIdx = Math.min(Number(document.getElementById("schedule-start-group").value) || 0, groups.length - 1);
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify({
+      groups: cloneGroups(groups),
+      startDate: dateValue,
+      startIdx
+    }));
+    return true;
+  }
+
+  window.saveSettings = function() {
+    if (!saveSchedule()) return;
+    const c = getModalColors();
+    localStorage.setItem("wc", JSON.stringify(c));
+    applyColors(c);
+    render();
+    document.getElementById("modal").classList.remove("open");
+  };
+
+  window.resetSchedule = function() {
+    groups = cloneGroups(defaultGroups);
+    start = new Date(defaultStart);
+    startIdx = defaultStartIdx;
+    localStorage.removeItem(SCHEDULE_KEY);
+    popSchedule();
+    render();
+  };
+
   window.saveColors = function() {
     const c = getModalColors();
     localStorage.setItem("wc", JSON.stringify(c));
@@ -458,13 +640,18 @@
   };
 
   document.getElementById("settingsBtn").addEventListener("click", () => {
+    popSchedule();
     popModal(loadColors());
     document.getElementById("modal").classList.add("open");
+  });
+  document.getElementById("schedule-groups").addEventListener("input", () => {
+    refreshStartGroupSelect(Number(document.getElementById("schedule-start-group").value) || 0);
   });
   document.getElementById("modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) document.getElementById("modal").classList.remove("open");
   });
 
+  loadSchedule();
   applyColors(loadColors());
   render();
 })();
