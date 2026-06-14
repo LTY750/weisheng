@@ -253,13 +253,42 @@
     flex-shrink: 0;
   }
   .modal .fg input[type="color"] {
-    width: 100%; height: 38px;
-    border: 2px solid #e8e8ee; border-radius: 10px;
-    padding: 2px; cursor: pointer; background: #fff;
-    transition: border-color .15s;
+    width: 56px; height: 36px;
+    border: none; border-radius: 12px;
+    padding: 0; cursor: pointer; background: transparent;
   }
-  .modal .fg input[type="color"]:hover { border-color: #c5c5d0; }
-  .modal .fg input[type="color"]:focus { border-color: #8b5cf6; outline: none; }
+  .modal .fg input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .modal .fg input[type="color"]::-webkit-color-swatch {
+    border: 2px solid rgba(255,255,255,.8);
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(15,12,41,.16);
+  }
+  .modal .fg input[type="color"]:focus { outline: 2px solid #8b5cf6; outline-offset: 2px; }
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .color-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 10px 10px 12px;
+    border: 1px solid #eeeef6;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fff, #fbfbff);
+  }
+  .color-card span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    color: #57576a;
+  }
   .modal .btn-row { display: flex; gap: 10px; margin-top: 20px; }
   .modal .btn-row button {
     flex: 1; padding: 12px; border: none; border-radius: 14px;
@@ -328,6 +357,10 @@
   }
   .modal .btn-ghost:hover { background: #ede9fe; }
 
+  @media (max-width: 420px) {
+    .color-grid { grid-template-columns: 1fr; }
+  }
+
   /* responsive */
   @media (max-width: 420px) {
     .card { padding: 24px 16px 20px; border-radius: 28px; }
@@ -361,7 +394,12 @@
     .modal { background: #1e1c30; }
     .modal h2 { color: #e8e4ff; }
     .modal .fg label { color: #a0a0b0; }
-    .modal .fg input[type="color"] { background: #2a2840; border-color: #3a3850; }
+    .modal .fg input[type="color"] { background: transparent; }
+    .color-card {
+      background: rgba(255,255,255,.04);
+      border-color: #3a3850;
+    }
+    .color-card span { color: #c7c7d8; }
     .modal .fg input[type="date"],
     .modal .fg input[type="text"],
     .modal .fg textarea,
@@ -383,7 +421,7 @@
 </head>
 <body>
 
-<button class="settings-btn" id="settingsBtn" title="自定义颜色">🎨</button>
+<button class="settings-btn" id="settingsBtn" title="设置">⚙️</button>
 
 <div class="modal-overlay" id="modal">
   <div class="modal">
@@ -396,14 +434,16 @@
     <button class="btn-save btn-ghost" onclick="resetSchedule()">↩ 恢复默认排班</button>
 
     <div class="section-title">颜色设置</div>
-    <div class="fg"><label style="--dot:#0f0c29">背景色</label><input type="color" id="cl-bg"></div>
-    <div class="fg"><label style="--dot:#ffffff">卡片底色</label><input type="color" id="cl-card"></div>
-    <div class="fg"><label style="--dot:#1e1b4b">标题颜色</label><input type="color" id="cl-title"></div>
-    <div class="fg"><label style="--dot:#6366f1">渐变起始色</label><input type="color" id="cl-gs"></div>
-    <div class="fg"><label style="--dot:#8b5cf6">渐变中间色</label><input type="color" id="cl-gm"></div>
-    <div class="fg"><label style="--dot:#a855f7">渐变结束色</label><input type="color" id="cl-ge"></div>
-    <div class="fg"><label style="--dot:#f8f7ff">卡片项背景色</label><input type="color" id="cl-ibg"></div>
-    <div class="fg"><label style="--dot:#ede9fe">今天高亮背景</label><input type="color" id="cl-tbg"></div>
+    <div class="color-grid">
+      <label class="color-card"><span>背景色</span><input type="color" id="cl-bg"></label>
+      <label class="color-card"><span>卡片底色</span><input type="color" id="cl-card"></label>
+      <label class="color-card"><span>标题颜色</span><input type="color" id="cl-title"></label>
+      <label class="color-card"><span>渐变起始</span><input type="color" id="cl-gs"></label>
+      <label class="color-card"><span>渐变中间</span><input type="color" id="cl-gm"></label>
+      <label class="color-card"><span>渐变结束</span><input type="color" id="cl-ge"></label>
+      <label class="color-card"><span>列表背景</span><input type="color" id="cl-ibg"></label>
+      <label class="color-card"><span>今日高亮</span><input type="color" id="cl-tbg"></label>
+    </div>
     <div class="btn-row">
       <button class="btn-reset" onclick="resetColors()">↩ 默认颜色</button>
       <button class="btn-save" onclick="saveSettings()">✓ 保存全部</button>
